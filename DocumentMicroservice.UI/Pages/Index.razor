@@ -1,0 +1,73 @@
+﻿@using System.Net.Http
+@inject HttpClient Http
+@using System.Threading.Tasks
+@using System.IO;
+@using System.Text.Json;
+@using DocumentMicroservice.UI.Model;
+@page "/"
+
+<PageTitle>Document Microservice</PageTitle>
+
+    <EditForm Model="@document">
+        <!--<DataAnnotationsValidator />
+        <Microsoft.AspNetCore.Components.Forms.ValidationSummary />-->
+        <div class="col-10 Foorm">
+            <div>
+                <label for="DocumentId" class="form-label">Document Id</label>
+                <input @bind="document.Id" type="text" class="form-control" id="DocumentId" placeholder="Идентификатор документа"/>
+            </div>
+
+            <div class="col-3 subButtom Foorm" style="margin-top: 8px">
+                <button class="btn btn-primary" @onclick="SetNewGuid">Новый id</button>
+            </div>
+        </div>
+
+        <div class="col-10 Foorm">
+            <label for="inputAddress" class="form-label">Title</label>
+            <input @bind="document.Title" type="text" class="form-control" id="inputAddress" placeholder="Название Документа" />
+        </div>
+
+        <div class="col-10 py-2 Foorm">
+            <label for="inputAddress2" class="form-label">Content</label>
+            <input @bind="document.Content" type="text" class="form-control" id="inputAddress2" placeholder="Краткое описание" />
+        </div>
+
+        <div class="col-3 subButtom Foorm">
+            <button type="submit" class="btn btn-primary" >Сохранить</button>
+        </div>
+    </EditForm>
+
+    <div style="margin-top: 20px">
+        @if (allDocuments == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <dl>
+                @foreach (var doc in allDocuments) {
+                    <dt>@doc.Title - @doc.Id</dt>
+                        <dd>@doc.Content</dd>
+                }
+            </dl>
+        }
+    </div>
+
+
+@code {
+
+    private Document document = new();
+    private Document[]? allDocuments;
+
+    //public string BaseUri { get; set; } = "https://localhost:5001/api/Documents/";
+
+    protected override async Task OnInitializedAsync() {
+        allDocuments = null;//await Http.GetFromJsonAsync<Document[]>("");
+    }
+
+    private void SetNewGuid() {
+        document.Id = Guid.NewGuid();
+    }
+
+}
+
