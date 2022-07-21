@@ -8,9 +8,9 @@
 
 <PageTitle>Document Microservice</PageTitle>
 
-    <EditForm Model="@document">
-        <!--<DataAnnotationsValidator />
-        <Microsoft.AspNetCore.Components.Forms.ValidationSummary />-->
+    <EditForm Model="@document" OnSubmit="@SendRequest">
+        <DataAnnotationsValidator />
+        <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
         <div class="col-10 Foorm">
             <div>
                 <label for="DocumentId" class="form-label">Document Id</label>
@@ -18,8 +18,12 @@
             </div>
 
             <div class="col-3 subButtom Foorm" style="margin-top: 8px">
-                <button class="btn btn-primary" @onclick="SetNewGuid">Новый id</button>
+                <button type="button" class="btn btn-primary" @onclick="SetNewGuid">Новый id</button>
             </div>
+
+            <!--<div class="col-3 subButtom Foorm" style="margin-top: 8px">
+                <button class="btn btn-primary" @onclick="GetDocById">Найти по id</button>
+            </div>-->
         </div>
 
         <div class="col-10 Foorm">
@@ -33,12 +37,12 @@
         </div>
 
         <div class="col-3 subButtom Foorm">
-            <button type="submit" class="btn btn-primary" >Сохранить</button>
+            <button type="submit" class="btn btn-primary" >Добавить/Изменить</button>
         </div>
     </EditForm>
 
     <div style="margin-top: 20px">
-        @if (allDocuments == null)
+        @if (!allDocuments.Any())
         {
             <p><em>Loading...</em></p>
         }
@@ -53,21 +57,51 @@
         }
     </div>
 
-
 @code {
 
     private Document document = new();
-    private Document[]? allDocuments;
+    private IReadOnlyList<Document> allDocuments = new List<Document>();
 
-    //public string BaseUri { get; set; } = "https://localhost:5001/api/Documents/";
-
-    protected override async Task OnInitializedAsync() {
-        allDocuments = null;//await Http.GetFromJsonAsync<Document[]>("");
-    }
+    public string BaseUri { get; set; } = "https://localhost:5001/api/Documents/";
 
     private void SetNewGuid() {
         document.Id = Guid.NewGuid();
     }
 
+    /*protected override async Task OnInitializedAsync() {
+        await GetAllDocumentsAsync();
+    }*/
+
+    private void SendRequest() {
+        HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("POST"), BaseUri);
+        var serializedDoc = JsonSerializer.Serialize<Document>(document);
+        request.Content = new StringContent(serializedDoc);
+        request.Content.Headers.Remove("Content-Type");
+        request.Content.Headers.Add("Content-Type", "application/json");
+        var response = Http.Send(request);
+        var content = response.Content.ReadAsByteArrayAsync().Result;
+        Console.WriteLine(response);
+    }
+
+    private async Task GetAllDocumentsAsync() {
+        var response = await Http.GetAsync(BaseUri);
+        var content = response.Content.ReadAsByteArrayAsync().Result;
+        if (response.IsSuccessStatusCode) {
+            allDocuments = JsonSerializer.Deserialize<IReadOnlyList<Document>>(content);
+        }
+    }
+
+    private void GetDocById() {
+        GetDocumentAsync();
+    }
+
+    private async Task GetDocumentAsync() {
+        string uri = string.Concat(BaseUri, document.Id.ToString());
+        var response = await Http.GetAsync(uri);
+        var content = response.Content.ReadAsByteArrayAsync().Result;
+        if (response.IsSuccessStatusCode){
+            document = JsonSerializer.Deserialize<Document>(content);
+        }
+    }
 }
 
