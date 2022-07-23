@@ -1,5 +1,6 @@
-﻿@using System.Net.Http
-@inject HttpClient Http
+﻿@inject HttpClient Http
+@inject DocumentMicroservice.UI.Service.IDocumentService DocumentService
+@using System.Net.Http
 @using System.Threading.Tasks
 @using System.IO;
 @using System.Text.Json;
@@ -8,36 +9,45 @@
 
 <PageTitle>Document Microservice</PageTitle>
 
-    <EditForm Model="@document" OnSubmit="@SendRequest">
-        <DataAnnotationsValidator />
-        <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
+    <EditForm Model="@document" OnValidSubmit="DocPostRequest">
+        <!--<DataAnnotationsValidator />
+        <Microsoft.AspNetCore.Components.Forms.ValidationSummary />-->
         <div class="col-10 Foorm">
             <div>
                 <label for="DocumentId" class="form-label">Document Id</label>
-                <input @bind="document.Id" type="text" class="form-control" id="DocumentId" placeholder="Идентификатор документа"/>
+                <input @bind-value="document.Id" type="text" class="form-control" id="DocumentId" placeholder="Идентификатор документа"/>
             </div>
 
             <div class="col-3 subButtom Foorm" style="margin-top: 8px">
                 <button type="button" class="btn btn-primary" @onclick="SetNewGuid">Новый id</button>
             </div>
 
-            <!--<div class="col-3 subButtom Foorm" style="margin-top: 8px">
-                <button class="btn btn-primary" @onclick="GetDocById">Найти по id</button>
-            </div>-->
+            <div class="col-3 subButtom Foorm" style="margin-top: 8px">
+                <button type="button" class="btn btn-primary" @onclick="GetDocument">Найти по id</button>
+            </div>
+
+            <div class="col-3 subButtom Foorm" style="margin-top: 8px">
+                <button type="button" class="btn btn-primary" @onclick="DeleteDoc">Удалить по id</button>
+            </div>
+
         </div>
 
         <div class="col-10 Foorm">
             <label for="inputAddress" class="form-label">Title</label>
-            <input @bind="document.Title" type="text" class="form-control" id="inputAddress" placeholder="Название Документа" />
+            <input @bind-value="document.Title" type="text" class="form-control" id="inputAddress" placeholder="Название Документа" />
         </div>
 
         <div class="col-10 py-2 Foorm">
             <label for="inputAddress2" class="form-label">Content</label>
-            <input @bind="document.Content" type="text" class="form-control" id="inputAddress2" placeholder="Краткое описание" />
+            <input @bind-value="document.Content" type="text" class="form-control" id="inputAddress2" placeholder="Краткое описание" />
         </div>
 
         <div class="col-3 subButtom Foorm">
-            <button type="submit" class="btn btn-primary" >Добавить/Изменить</button>
+            <button type="submit" class="btn btn-primary" >Добавить</button>
+        </div>
+
+        <div class="col-3 subButtom Foorm" style="margin-top: 8px">
+            <button type="button" class="btn btn-primary" @onclick="EditDoc">Изменить</button>
         </div>
     </EditForm>
 
@@ -62,46 +72,36 @@
     private Document document = new();
     private IReadOnlyList<Document> allDocuments = new List<Document>();
 
-    public string BaseUri { get; set; } = "https://localhost:5001/api/Documents/";
+    public string BaseUri { get; set; } = "https://localhost:44386/api/Documents/";
 
     private void SetNewGuid() {
         document.Id = Guid.NewGuid();
     }
 
-    /*protected override async Task OnInitializedAsync() {
-        await GetAllDocumentsAsync();
-    }*/
-
-    private void SendRequest() {
-        HttpRequestMessage request = new HttpRequestMessage(new HttpMethod("POST"), BaseUri);
-        var serializedDoc = JsonSerializer.Serialize<Document>(document);
-        request.Content = new StringContent(serializedDoc);
-        request.Content.Headers.Remove("Content-Type");
-        request.Content.Headers.Add("Content-Type", "application/json");
-        var response = Http.Send(request);
-        var content = response.Content.ReadAsByteArrayAsync().Result;
-        Console.WriteLine(response);
+    // TODO: добавить обновление после post-запроса
+    protected override async Task OnInitializedAsync() {
+        allDocuments = await DocumentService.GetAllDocs(BaseUri);
     }
 
-    private async Task GetAllDocumentsAsync() {
-        var response = await Http.GetAsync(BaseUri);
-        var content = response.Content.ReadAsByteArrayAsync().Result;
-        if (response.IsSuccessStatusCode) {
-            allDocuments = JsonSerializer.Deserialize<IReadOnlyList<Document>>(content);
-        }
+    async Task DocPostRequest() {
+        var result = await DocumentService.CreateNewDocument(document, BaseUri);
+        allDocuments = await DocumentService.GetAllDocs(BaseUri);
     }
 
-    private void GetDocById() {
-        GetDocumentAsync();
+    // TODO: Guid.TryParse может быть...
+    async Task GetDocument() { 
+        var docUri = String.Concat(BaseUri, document.Id.ToString());
+        document = await DocumentService.GetDocById(docUri);
     }
 
-    private async Task GetDocumentAsync() {
-        string uri = string.Concat(BaseUri, document.Id.ToString());
-        var response = await Http.GetAsync(uri);
-        var content = response.Content.ReadAsByteArrayAsync().Result;
-        if (response.IsSuccessStatusCode){
-            document = JsonSerializer.Deserialize<Document>(content);
-        }
+    async Task EditDoc() {
+        var result = await DocumentService.PutDocument(document, BaseUri);
+        allDocuments = await DocumentService.GetAllDocs(BaseUri);
+    }
+
+    async Task DeleteDoc() {
+        var docUri = String.Concat(BaseUri, document.Id.ToString());
+        var resultStr = await DocumentService.DeleteDocument(docUri);
     }
 }
 
