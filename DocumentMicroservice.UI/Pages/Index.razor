@@ -18,16 +18,10 @@
                 <input @bind-value="document.Id" type="text" class="form-control" id="DocumentId" placeholder="Идентификатор документа"/>
             </div>
 
-            <div class="col-3 subButtom Foorm" style="margin-top: 8px">
-                <button type="button" class="btn btn-primary" @onclick="SetNewGuid">Новый id</button>
-            </div>
-
-            <div class="col-3 subButtom Foorm" style="margin-top: 8px">
-                <button type="button" class="btn btn-primary" @onclick="GetDocument">Найти по id</button>
-            </div>
-
-            <div class="col-3 subButtom Foorm" style="margin-top: 8px">
-                <button type="button" class="btn btn-primary" @onclick="DeleteDoc">Удалить по id</button>
+            <div class="btn-group" role="group" aria-label="Basic outlined example" style="margin-top: 8px">
+                <button type="button" class="btn btn-outline-primary" @onclick="SetNewGuid">Новый id</button>
+                <button type="button" class="btn btn-outline-primary" @onclick="GetDocument">Найти по id</button>
+                <button type="button" class="btn btn-danger" @onclick="DeleteDoc">Удалить по id</button>
             </div>
 
         </div>
@@ -42,12 +36,9 @@
             <input @bind-value="document.Content" type="text" class="form-control" id="inputAddress2" placeholder="Краткое описание" />
         </div>
 
-        <div class="col-3 subButtom Foorm">
-            <button type="submit" class="btn btn-primary" >Добавить</button>
-        </div>
-
-        <div class="col-3 subButtom Foorm" style="margin-top: 8px">
-            <button type="button" class="btn btn-primary" @onclick="EditDoc">Изменить</button>
+        <div class="btn-group" role="group" aria-label="Basic mixed styles example" style="margin-top: 8px">
+            <button type="submit" class="btn btn-success">Добавить</button>
+            <button type="button" class="btn btn-warning" @onclick="EditDoc">Изменить</button>
         </div>
     </EditForm>
 
@@ -102,6 +93,7 @@
     async Task DeleteDoc() {
         var docUri = String.Concat(BaseUri, document.Id.ToString());
         var resultStr = await DocumentService.DeleteDocument(docUri);
+        allDocuments = await DocumentService.GetAllDocs(BaseUri);
     }
 }
 
